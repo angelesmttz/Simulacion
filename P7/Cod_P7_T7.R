@@ -5,8 +5,8 @@ f <- function(x, y) {
 low <- -2
 high <- 3
 step <- 0.25
-replicas <- 5
-tmax<-100
+replicas <- 10
+tmax<-40
 maxWA<-0.0666822
 resultados<-data.frame()
 
@@ -18,16 +18,19 @@ paralelo <-function(w){
   datos<-data.frame()
   resultados<-data.frame()
   
-  
   for (paso in 1:tmax) {
     
+   
     delta.x <- runif(1,0,step)
     delta.y <- runif(1,0,step)
+    
+   
     left <- curr.x - delta.x
     right <- curr.x + delta.x
-    
     up<-curr.y + delta.y
     down<-curr.y-delta.y
+    
+    
     
     if (f(left,curr.y) > f(right,curr.y)) {
       best.x<- c(left,curr.y)
@@ -35,14 +38,14 @@ paralelo <-function(w){
       best.x<- c(right,curr.y)
     }
     
+   
     if (f(curr.x,down) > f(curr.x,up)) {
       best.y<-c(curr.x,down)
     } else {
       best.y<-c(curr.x,up)
     }
     
-    
-    if (f(best.x[1],best.x[2]) > f(best.y[1],best.y[2])) {
+        if (f(best.x[1],best.x[2]) > f(best.y[1],best.y[2])) {
       curr.x<- best.x[1]
       curr.y<- best.x[2]
     } else {
@@ -51,7 +54,7 @@ paralelo <-function(w){
     }
     
     
-    if (f(curr.x,curr.y) > f(best[1],best[2])) {
+      if (f(curr.x,curr.y) > f(best[1],best[2])) {
       best[1]<-curr.x
       best[2]<-curr.y
       
@@ -72,11 +75,12 @@ colnames(trayecto)<-c("x","y","Valores","Replica","Paso")
 trayecto$Replica<- as.factor(trayecto$Replica)
 
 png("Replicas.png")
-ggplot(data=trayecto, aes(x = Paso, y= trayecto$Valores,group=trayecto$Replica)) +
-  geom_line(color=trayecto$Replica)+
+ggplot() +
+  geom_line(data=trayecto, aes(x = Paso, y= trayecto$Valores,color=trayecto$Replica),size=0.6)+
   scale_y_continuous(name="Resultado de la función")+
-  theme(legend.position = "none")+
-  geom_hline(yintercept=maxWA, linetype="dashed", color = "black",size=0.5)
+  geom_hline(yintercept=maxWA, linetype="dashed", color = "black",size=0.5)+
+  theme_minimal()+
+  guides(color=FALSE)
   
 graphics.off()
 

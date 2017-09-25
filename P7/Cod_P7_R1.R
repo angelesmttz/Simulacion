@@ -4,6 +4,7 @@ library(ggplot2)
 f <- function(x, y) {
   return(((x + 0.5)^4 - 30 * x^2 - 20 * x + (y + 0.5)^4 - 30 * y^2 - 20 * y)/100)
 }
+repeticiones<-15
 
 #Gráfico base
 x <- seq(-6, 5, 0.25)
@@ -16,27 +17,24 @@ names(d) <- c("x", "y", "Valor")
 
 base<-ggplot(d, aes(x, y)) + 
   geom_raster(aes(fill=Valor)) + 
-  scale_fill_gradient(low="yellow", high="red")
+  scale_fill_gradient(low="yellow", high="lightgoldenrodyellow")
 
 
-tmax<-100
+tmax<-40
 low <- -2
 high <- 3
 step <- 0.25
 
-curr.x <-runif(1, low, high)
-curr.y<-runif(1, low, high)
-best <- c(curr.x,curr.y)
+replicas <-function(r){
+  
+  curr.x <-runif(1, low, high)
+  curr.y<-runif(1, low, high)
+  best <- c(curr.x,curr.y)
+  datos<-data.frame()
+  resultados<-data.frame()
 
 for (paso in 1:tmax) {
-  
-base+ geom_point(aes(x=curr.x,y=curr.y))+
-    geom_point(aes(x=best[1],y=best[2]),color = 'darkblue')+
-    ggtitle(paste("Paso",paso))+
-    theme(plot.title = element_text(hjust = 0.5))
-    ggsave(paste("P7_paso_",paso,".png"))
-  
-  
+
   delta.x <- runif(1,0,step)
   delta.y <- runif(1,0,step)
   left <- curr.x - delta.x
@@ -71,5 +69,30 @@ base+ geom_point(aes(x=curr.x,y=curr.y))+
     best[1]<-curr.x
     best[2]<-curr.y
   }
+  datos<-cbind(curr.x,curr.y,f(curr.x,curr.y),r,paso)
+  resultados<-rbind(resultados,datos)
     
-    }
+}
+  return(resultados)
+}
+
+
+suppressMessages(library(doParallel))
+registerDoParallel(makeCluster(detectCores() - 1))
+trayecto<- foreach(r = 1:repeticiones, .combine=rbind) %dopar% replicas(r)
+stopImplicitCluster()
+
+colnames(trayecto)=c("x","y","z","Replica","Paso")
+trayecto$Replica<- as.factor(trayecto$Replica)
+
+for (i in 1:tmax){
+
+g<-trayecto[trayecto$Paso==i,]
+
+base+ geom_point(data=g,aes(g$x,g$y,color=g$Replica))+
+  labs(color="Réplica")+
+  ggtitle(paste("Paso",i))+
+  theme(plot.title = element_text(hjust = 0.5))
+ggsave(paste("P7_paso_",i,".png"))
+
+}
