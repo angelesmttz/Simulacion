@@ -8,11 +8,10 @@ f <- function(x) { # modificamos para que sea interesante
 low <- -2
 high <- 4
 step <- 0.2
-varE<- seq(0.95,0.99,0.01)
-varT<-seq(1,2001,1000)
+varE<- seq(0.8,0.9,0.1)
+varT<-seq(1,3001,1000)
 tmax<-50
-ciclos<-7
-
+ciclos<-4
 
 curr <- runif(1, low, high)
 rnormal<-data.frame()
@@ -60,7 +59,7 @@ for (Temp in varT){
   best<-x
   
 for (pasos in 1:tmax){
-xi<-x
+if (x<high){xi<-x
 dx=runif(1,-step,step)
 xp<-x+dx
 delta<-f(xp)-f(x)
@@ -76,7 +75,9 @@ if(f(x)>f(best)){best<-x}
 
 dpasos<-cbind(r,E,T0,Temp,pasos,xi,xp,f(xi),f(xp),delta,sum(cuenta),best,f(best))
 rpasos<-rbind(rpasos,dpasos)
-
+}
+  else
+    break;
 }
 }
 }
@@ -102,9 +103,11 @@ g2$Replica<- as.factor(g2$Replica)
 
 ggplot() +
   geom_line(data=g2, aes(x = g2$Pasos, y= g2$`f(mejor)`,color=g2$Replica),size=0.6)+
-  scale_y_continuous(name="Resultado de la función")+
+  scale_y_continuous(name="Resultado de la función",limits = c(-10,30) )+
+  scale_x_continuous(name="Paso")+
+  ggtitle(paste("Temperatura",varT[vt],"E",varE[ve]))+
   geom_line(data=rnormal, aes(x = paso, y=rnormal$`f(best)`),linetype="dashed",colour="black")+
-  guides(color=FALSE)
+  labs(color="Réplica")
 
 ggsave(paste("Variacion_E",varE[ve],"T",varT[vt],".png",sep="_"))
 
