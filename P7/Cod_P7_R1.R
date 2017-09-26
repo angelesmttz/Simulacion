@@ -89,7 +89,7 @@ for (i in 1:tmax){
 
 g<-trayecto[trayecto$Paso==i,]
 
-base+ geom_point(data=g,aes(g$x,g$y,color=g$Replica))+
+base+ geom_point(data=g,aes(g$x,g$y,color=g$Replica),size=5)+
   labs(color="Réplica")+
   ggtitle(paste("Paso",i))+
   theme(plot.title = element_text(hjust = 0.5))

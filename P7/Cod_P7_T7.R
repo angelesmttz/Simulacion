@@ -6,7 +6,7 @@ low <- -2
 high <- 3
 step <- 0.25
 replicas <- 10
-tmax<-40
+tmax<-35
 maxWA<-0.0666822
 resultados<-data.frame()
 

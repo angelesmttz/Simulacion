@@ -1,63 +1,112 @@
 library(ggplot2)
 
+
 f <- function(x) { # modificamos para que sea interesante
   return(5 * cos(14*x - 3) * sin(2*x^2 - 4 * x) + 2 * x^2 - 4 * x)
 }
 
-low <- -10
-high <- -low
+low <- -2
+high <- 4
 step <- 0.2
-varE<- seq(0.6,0.9,0.1)
-varT<-seq(200,1000,200)
-tmax<-600
-ciclos<-100
+varE<- seq(0.95,0.99,0.01)
+varT<-seq(1,2001,1000)
+tmax<-50
+ciclos<-7
 
+
+curr <- runif(1, low, high)
+rnormal<-data.frame()
+best<-curr
+
+for (tiempo in 1:tmax) {
+  delta <- runif(1, 0, step)
+  
+  left <- curr - delta
+  right <- curr + delta
+  fl <- f(left)
+  fr <- f(right)
+  
+  if (fl > fr) {
+    curr <- left
+  } else {
+    curr <- right
+  }
+  
+  if (f(curr) > f(best)) {
+    best <- curr
+  }
+  
+  dnormal<-cbind(curr,f(curr),best,f(best),tiempo)
+  rnormal<-rbind(rnormal,dnormal)
+  
+}
+
+colnames(rnormal)<-c("x","f(x)","best","f(best)","paso")
 
 replicas<-function(r){
+  
   resultados<-data.frame()
   datos<-data.frame()
+  rpasos<-data.frame()
   
-  for (E in varE){
+for (E in varE){
+  
 for (Temp in varT){
   x<- runif(1, low, high)
   T0<-Temp
-  fx<-c()
-
+  #fx<-c()
+  cuenta<-c()
+  dpasos<-data.frame()
+  best<-x
+  
 for (pasos in 1:tmax){
- 
+xi<-x
 dx=runif(1,-step,step)
 xp<-x+dx
 delta<-f(xp)-f(x)
+
 if (delta>0){x<-xp}
-else{if (runif(1)<exp(-delta/Temp)){x<-xp
-  Temp=Temp*E}}
- 
- fx<-c(fx,f(x))
- 
+else{if (runif(1)<exp(-delta/Temp)){
+  x<-xp
+  Temp=Temp*E
+  cuenta<-c(cuenta,1)
+}}
+
+if(f(x)>f(best)){best<-x}
+
+dpasos<-cbind(r,E,T0,Temp,pasos,xi,xp,f(xi),f(xp),delta,sum(cuenta),best,f(best))
+rpasos<-rbind(rpasos,dpasos)
+
 }
-  Vmax<-max(fx)
-  datos<-cbind(r,T0,E,Vmax)
-  resultados<-rbind(resultados,datos)
 }
-  }
-  return(resultados)
+}
+  return(rpasos)
 }
 
 suppressMessages(library(doParallel))
 registerDoParallel(makeCluster(detectCores() - 1))
-maximos<-foreach(r=1:ciclos,.combine=rbind) %dopar% replicas(r)
+datos<-foreach(r=1:ciclos,.combine=rbind) %dopar% replicas(r)
 stopImplicitCluster()
 
-colnames(maximos)<-c("Replica","T0","E","Valor")
-maximos$E<-as.factor(maximos$E)
-maximos$T0<-as.factor(maximos$T0)
+colnames(datos)<-c("Replica","E","T0","Temperatura","Pasos","x","xp","f(x)","f(xp)","Delta","Aceptacion","Mejor","f(mejor)")
 
-png("Variacion_T_E.png")
-ggplot()+
-geom_boxplot(data=maximos, aes(x = maximos$T0, y= maximos$Valor,fill=E))+
-  scale_y_continuous(name="Valor máximo") +
-  scale_x_discrete(name="T inicial")+
-  geom_boxplot(position=position_dodge(1))
 
-graphics.off()
+for (ve in 1:length(varE)){
+g<-datos[datos$E==varE[ve],]
+
+
+for (vt in 1:length(varT)){
   
+g2<-g[g$T0==varT[vt],]
+g2$Replica<- as.factor(g2$Replica)
+
+ggplot() +
+  geom_line(data=g2, aes(x = g2$Pasos, y= g2$`f(mejor)`,color=g2$Replica),size=0.6)+
+  scale_y_continuous(name="Resultado de la función")+
+  geom_line(data=rnormal, aes(x = paso, y=rnormal$`f(best)`),linetype="dashed",colour="black")+
+  guides(color=FALSE)
+
+ggsave(paste("Variacion_E",varE[ve],"T",varT[vt],".png",sep="_"))
+
+}
+}
