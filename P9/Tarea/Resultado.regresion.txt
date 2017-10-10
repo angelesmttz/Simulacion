@@ -1,0 +1,38 @@
+Call:
+lm(formula = tabla$Velocidad ~ log(tabla$Masa), data = tabla)
+
+Residuals:
+       Min         1Q     Median         3Q        Max 
+-0.0039228 -0.0006938  0.0000042  0.0006776  0.0048751 
+
+Coefficients:
+                  Estimate Std. Error t value Pr(>|t|)    
+(Intercept)      0.0005254  0.0002493   2.108   0.0403 *  
+log(tabla$Masa) -0.0017135  0.0001647 -10.404 6.82e-14 ***
+---
+Signif. codes:  
+0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.001459 on 48 degrees of freedom
+Multiple R-squared:  0.6928,	Adjusted R-squared:  0.6864 
+F-statistic: 108.2 on 1 and 48 DF,  p-value: 6.824e-14
+
+#####################################################################
+
+Call:
+lm(formula = tabla$Velocidad ~ log(tabla$Masa), data = tabla)
+
+Residuals:
+       Min         1Q     Median         3Q        Max 
+-0.0028988 -0.0005927  0.0000751  0.0006969  0.0037313 
+
+Coefficients:
+                  Estimate Std. Error t value Pr(>|t|)    
+(Intercept)      0.0005247  0.0001918   2.736  0.00869 ** 
+log(tabla$Masa) -0.0017323  0.0001680 -10.313 9.14e-14 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.001205 on 48 degrees of freedom
+Multiple R-squared:  0.689,	Adjusted R-squared:  0.6826 
+F-statistic: 106.4 on 1 and 48 DF,  p-value: 9.143e-14
