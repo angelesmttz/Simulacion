@@ -25,7 +25,12 @@ ggplot() +
   theme(plot.title = element_text(hjust = 0.5))+
   guides(size=FALSE,color=guide_legend(title="Carga"))+
   scale_x_continuous(name="x",limits = c(0, 1))+
-  scale_y_continuous(name="y", limits = c(0, 1))
+  scale_y_continuous(name="y", limits = c(0, 1))+
+  theme(axis.text.x=element_text(size=12),
+        axis.text.y=element_text(size=12),
+        plot.title=element_text(size=14),
+        axis.title.x = element_text(size=12),
+        axis.title.y = element_text(size=12))
   ggsave("Particulas_generadas.png")
 
   
@@ -61,7 +66,12 @@ ggplot() +
   theme(plot.title = element_text(hjust = 0.5))+
   guides(size=FALSE,color=guide_legend(title="Carga"))+
   scale_x_continuous(name="x",limits = c(0, 1))+
-  scale_y_continuous(name="y", limits = c(0, 1))
+  scale_y_continuous(name="y", limits = c(0, 1))+
+  theme(axis.text.x=element_text(size=12),
+        axis.text.y=element_text(size=12),
+        plot.title=element_text(size=14),
+        axis.title.x = element_text(size=12),
+        axis.title.y = element_text(size=12))
   ggsave("Estado_inicial.png")
   datos<-data.frame()
   
@@ -90,7 +100,12 @@ for (iter in 1:tmax) {
   scale_colour_manual(values=colores)+  
   ggtitle(paste("Paso",iter))+
   theme(plot.title = element_text(hjust = 0.5))+
-  guides(size=FALSE,color=guide_legend(title="Carga"))
+  guides(size=FALSE,color=guide_legend(title="Carga"))+
+    theme(axis.text.x=element_text(size=12),
+          axis.text.y=element_text(size=12),
+          plot.title=element_text(size=14),
+          axis.title.x = element_text(size=12),
+          axis.title.y = element_text(size=12))
   ggsave(paste("P9_p_",iter,".png"))
   
 }
@@ -112,7 +127,7 @@ ggplot(tabla, aes(x=Masa, y=Velocidad))+
   geom_smooth(method = "lm", formula =y ~log(x))+
   scale_x_continuous(name="Masa")+
   scale_y_continuous(name="Velocidad")
-ggsave("Variacion_masa.png")
+  ggsave("Variacion_masa.png")
 
 tabla$Carga<-p$c
 
