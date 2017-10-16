@@ -2,7 +2,6 @@ ti<-Sys.time()
 
 library(testit)
 suppressMessages(library(doParallel))
-
 knapsack <- function(cap, peso, valor) {
   n <- length(peso)
   pt <- sum(peso) 
@@ -98,11 +97,6 @@ pm <- 0.05
 rep <- 50
 mejores <- double()
 
-para.mut<-function(i){
-  if (runif(1) < pm) {
-    return(mutacion(p[i,],n))}
-}
-
 para.rep<-function(i){
   padres <- sample(1:tam, 2, replace=FALSE)
   hijos <- reproduccion(p[padres[1],], p[padres[2],], n)
@@ -120,19 +114,16 @@ para.obj<-function(i){
 }
 
 registerDoParallel(makeCluster(detectCores() - 1))
-
 for (iter in 1:tmax) {
   
   p$obj <- NULL
   p$fact <- NULL
   
-  res.mut<-foreach(i=1:tam,combine = rbind)%dopar% para.mut(i)
-  mutados <- data.frame(matrix(unlist(res.mut), ncol=n))
-  
-  colnames(mutados)<-c(1:n)
-  colnames(p)<-c(1:n)
-  
-  p<-rbind(p,mutados)
+  for (i in 1:tam) { # cada objeto puede mutarse con probabilidad pm
+    if (runif(1) < pm) {
+      p <- rbind(p, mutacion(p[i,], n))
+    }
+  }
   
   p<-rbind(p,foreach(i=1:rep,combine=rbind)%dopar% para.rep(i))
   
@@ -153,10 +144,9 @@ for (iter in 1:tmax) {
   factibles <- p[p$fact == TRUE,]
   mejor <- max(factibles$obj)
   mejores <- c(mejores, mejor)
-  
 }
-stopImplicitCluster()
 
+stopImplicitCluster()
 
 tf<-Sys.time()
 
