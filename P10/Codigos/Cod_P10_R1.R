@@ -1,7 +1,8 @@
-ti<-Sys.time()
+init<-50
+tmax<-50
 
 library(testit)
-suppressMessages(library(doParallel))
+
 knapsack <- function(cap, peso, valor) {
   n <- length(peso)
   pt <- sum(peso) 
@@ -85,20 +86,14 @@ reproduccion <- function(x, y, n) {
   return(c(xy, yx))
 }
 
-n <- 50
-pesos <- generador.pesos(n, 15, 80)
-valores <- generador.valores(pesos, 10, 500)
-capacidad <- round(sum(pesos) * 0.65)
-optimo <- knapsack(capacidad, pesos, valores)
-p <- poblacion.inicial(n, init)
-tam <- dim(p)[1]
-assert(tam == init)
-pm <- 0.05
-rep <- 50
-mejores <- double()
+para.mut<-function(i){
+  if (runif(1) < pm) {
+    return(unlist(mutacion(p[i,],n)))
+  }
+}
 
-para.rep<-function(i){
-  padres <- sample(1:tam, 2, replace=FALSE)
+para.rep.m<-function(i){
+  padres <- sample(1:tam, 2, prob=elites,replace=TRUE)
   hijos <- reproduccion(p[padres[1],], p[padres[2],], n)
   p.hijo<- hijos[1:n] # primer hijo
   s.hijo<- hijos[(n+1):(2*n)] # segundo hijo
@@ -113,25 +108,39 @@ para.obj<-function(i){
   return(datos)
 }
 
+
+n <- 50
+pesos <- generador.pesos(n, 15, 80)
+valores <- generador.valores(pesos, 10, 500)
+capacidad <- round(sum(pesos) * 0.65)
+optimo <- knapsack(capacidad, pesos, valores)
+pm <- 0.05
+rep <- 50
+resultados<-data.frame()
+
+
+suppressMessages(library(doParallel))
 registerDoParallel(makeCluster(detectCores() - 1))
+
+for (replicas in 1:5){
+p <- poblacion.inicial(n, init)
+tam <- dim(p)[1]
+assert(tam == init)
+mejores <- double()
+
+
 for (iter in 1:tmax) {
-  
   p$obj <- NULL
   p$fact <- NULL
   
-  for (i in 1:tam) { # cada objeto puede mutarse con probabilidad pm
-    if (runif(1) < pm) {
-      p <- rbind(p, mutacion(p[i,], n))
-    }
-  }
-  
-  p<-rbind(p,foreach(i=1:rep,combine=rbind)%dopar% para.rep(i))
+  p<-rbind(p,foreach(i=1:tam,.combine = rbind)%dopar% para.mut(i))
+  elites<-foreach(i=1:tam,.combine = c)%dopar% objetivo(p[i,], valores)
+  elites <- elites / sum(elites)
+  p<-rbind(p,foreach(i=1:rep,combine=rbind)%dopar% para.rep.m(i))
   
   tam <- dim(p)[1]
   obj <- double()
   fact <- integer()
-  
-  rownames(p)<-c(1:dim(p)[1])
   
   p<- data.frame(sapply(p, function(x) as.numeric(as.character(x))))
   p<-cbind(p,foreach(i=1:tam,.combine=rbind)%dopar% para.obj(i))
@@ -144,10 +153,47 @@ for (iter in 1:tmax) {
   factibles <- p[p$fact == TRUE,]
   mejor <- max(factibles$obj)
   mejores <- c(mejores, mejor)
+  
+}
+  datos<-cbind(replicas,mejores,c(1:tmax))
+  resultados<-rbind(resultados,datos)
+  print(replicas)
 }
 
 stopImplicitCluster()
 
-tf<-Sys.time()
+#save.image(file="Reto1.RData")
 
-t<-tf-ti
+para.rep<-function(i){
+  padres <- sample(1:tam, 2,replace=TRUE)
+  hijos <- reproduccion(p[padres[1],], p[padres[2],], n)
+  p.hijo<- hijos[1:n] # primer hijo
+  s.hijo<- hijos[(n+1):(2*n)] # segundo hijo
+  son<-rbind(p.hijo,s.hijo)
+  return(son)
+}
+
+source('~/GitHub/Simulacion/Simulacion/P10/Cod_P10_T10.R')
+tarea<-cbind(mejores,c(1:tmax))
+tarea<-as.data.frame(tarea)
+colnames(tarea)<-c("Valores","Paso")
+colnames(resultados)<-c("Replica","Valores","Paso")
+resultados$Replica<-as.factor(resultados$Replica)
+
+
+library(ggplot2)
+png("Seleccion_ruleta_100.png")
+
+ggplot()+
+  geom_line(data=resultados,aes(x=resultados$Paso,y=resultados$Valores,color=resultados$Replica),size=0.6,linetype="F1")+
+  geom_hline(yintercept=optimo, linetype="dashed", color = "darkgreen",size=0.6)+
+  geom_line(data=tarea,aes(x=tarea$Paso,y=tarea$Valores,color="black"),size=0.6)+
+  xlab("Paso")+   ylab("Valores")+
+  scale_color_manual(name = "Selección", values = c("deepskyblue","deepskyblue1",
+          "darkgoldenrod2","firebrick3","darkorchid","black"),
+          labels =c("Ruleta1", "Ruleta2","Ruleta3","Ruleta4","Ruleta5","Original")) +
+    guides(color = guide_legend(order = 1))
+    dev.off()
+
+
+save.image(file="R1_100.RData")
