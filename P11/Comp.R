@@ -1,11 +1,11 @@
-ciclos<-50
+ciclos<-5
 md <- 3
 tc <- 5
 vc<-4
 graficos<-FALSE
-vark<-2:10
-n<-200
-datos<-data.frame()
+vark<-seq(5,15,5)
+varn<-seq(200,1000,200)
+resultados<-data.frame()
 
 pick.one <- function(x) {
   if (length(x) == 1) {
@@ -32,17 +32,15 @@ eval <- function(pol, vars, terms) {
   }
   return(value)
 }
-
 domin.by <- function(target, challenger, total) {
   if (sum(challenger < target) > 0) {
     return(FALSE) # hay empeora
   } # si no hay empeora, vemos si hay mejora
   return(sum(challenger > target) > 0)
 }
-
 evaluacion<-function(j){
   datos<-double()
-  for (i in 1:n) {# para todos los objetivos
+    for (i in 1:n) {# para todos los objetivos
     res<- eval(obj[[j]], sol[i,], tc)
     datos<-rbind(datos,res)
   }
@@ -59,50 +57,40 @@ dominios<- function(i){
 
 suppressMessages(library(doParallel))
 registerDoParallel(makeCluster(detectCores() - 1))
+
 for (replicas in 1:ciclos){
-for (k in vark){
-obj <- list()
-obj<-foreach(i=1:k,combine=rbind) %dopar% poli(md, vc, tc)
-
-minim <- (runif(k) > 0.5)
-sign <- (1 + -2 * minim)
-
-sol <- matrix(runif(vc * n), nrow=n, ncol=vc)
-val <- matrix(rep(NA, k * n), nrow=n, ncol=k)
-
-val<-foreach(j=1:k,.combine=cbind)%dopar%evaluacion(j)
-no.dom <- logical()
-dominadores <- integer()
-dominadores<-foreach(i=1:n,.combine=c)%dopar% dominios(i)
-
-
-for (i in 1:n){
-  no.dom<-c(no.dom,dominadores[i]==0)
-}
-
-frente <- subset(val, no.dom) # solamente las no dominadas
-tam<-dim(frente)[1]
-
-res<-cbind(k,tam,replicas)
-datos<-rbind(datos,res)
-
-}
+  for (k in vark){
+   for (n in varn){
+    
+    source('~/GitHub/Simulacion/Simulacion/P11/P11.R')
+    paralelo<-cbind("original",replicas,k,n,t)
+    
+    source('~/GitHub/Simulacion/Simulacion/P11/P11_T11.R')
+    secuencial<-cbind("paralelo",replicas, k,n, t)
+    
+    resultados<-rbind(resultados,paralelo,secuencial)
+     }
+  }
   print(replicas)
 }
 
 stopImplicitCluster()
 
-colnames(datos)<-c("Objetivos","Soluciones","Replica")
-datos$Objetivos<-as.factor(datos$Objetivos)
+save.image(file="Resultados_Tarea_11.RData")
+
+colnames(resultados)<-c("Tipo","Replica","Objetivos","Soluciones","Tiempo")
+resultados$Tipo <- as.factor(resultados$Tipo)
+resultados$Soluciones <- as.factor(resultados$Soluciones)
+resultados$Objetivos <- as.factor(resultados$Objetivos)
+resultados$Tiempo<-as.numeric(levels(resultados$Tiempo))[resultados$Tiempo]
+
 
 library(ggplot2)
-png("Frecuncia_objetivos_no.png")
-ggplot(data=datos,aes(datos$Objetivos,(datos$Soluciones*100/n))) +
-  geom_violin(scale="width",fill="burlywood3")+
-  geom_boxplot(width=0.25,fill="aquamarine4", color="black",outlier.size = 0.1) +
-  xlab("Objetivos") +
-  ylab("Frecuencia (%)")+
+png("Paralelizacion_k5.png")
+ggplot(data=resultados, aes(x = Soluciones, y= Tiempo,color=Objetivos)) +
+  geom_boxplot()+facet_grid(Tipo~.,switch = "both")+
+  theme(legend.position = "bottom")+
   theme_bw()
+  
 dev.off()
-
 

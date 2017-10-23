@@ -1,9 +1,9 @@
-ciclos<-50
+ciclos<-5
 md <- 3
 tc <- 5
 vc<-4
 graficos<-FALSE
-vark<-2:10
+vark<-2:16
 n<-200
 datos<-data.frame()
 
@@ -59,7 +59,6 @@ dominios<- function(i){
 
 suppressMessages(library(doParallel))
 registerDoParallel(makeCluster(detectCores() - 1))
-for (replicas in 1:ciclos){
 for (k in vark){
 obj <- list()
 obj<-foreach(i=1:k,combine=rbind) %dopar% poli(md, vc, tc)
@@ -87,22 +86,20 @@ res<-cbind(k,tam,replicas)
 datos<-rbind(datos,res)
 
 }
-  print(replicas)
-}
 
 stopImplicitCluster()
 
-colnames(datos)<-c("Objetivos","Soluciones","Replica")
+colnames(datos)<-c("Objetivos","Dominadores")
 datos$Objetivos<-as.factor(datos$Objetivos)
 
 library(ggplot2)
 png("Frecuncia_objetivos_no.png")
-ggplot(data=datos,aes(datos$Objetivos,(datos$Soluciones*100/n))) +
-  geom_violin(scale="width",fill="burlywood3")+
-  geom_boxplot(width=0.25,fill="aquamarine4", color="black",outlier.size = 0.1) +
+ggplot(data=datos,aes(datos$Objetivos,(datos$Dominadores/n))) +
+  geom_violin(scale="width",fill="orange")+
+  geom_boxplot(width=0.25,fill="blue", color="black",outlier.size = 0.1) +
   xlab("Objetivos") +
-  ylab("Frecuencia (%)")+
-  theme_bw()
+  ylab("Frecuencia (%)") +
+  ggtitle("Cantidad de soluciones dominantes")
 dev.off()
 
 
