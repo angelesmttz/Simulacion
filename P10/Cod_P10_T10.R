@@ -1,7 +1,7 @@
-ciclos<-7
-tmax<-1
+ti<-Sys.time()
 
 library(testit)
+suppressMessages(library(doParallel))
 
 knapsack <- function(cap, peso, valor) {
   n <- length(peso)
@@ -86,14 +86,25 @@ reproduccion <- function(x, y, n) {
   return(c(xy, yx))
 }
 
+n <- 50
+pesos <- generador.pesos(n, 15, 80)
+valores <- generador.valores(pesos, 10, 500)
+capacidad <- round(sum(pesos) * 0.65)
+optimo <- knapsack(capacidad, pesos, valores)
+p <- poblacion.inicial(n, init)
+tam <- dim(p)[1]
+assert(tam == init)
+pm <- 0.05
+rep <- 50
+mejores <- double()
+
 para.mut<-function(i){
   if (runif(1) < pm) {
-    return(unlist(mutacion(p[i,],n)))
-  }
+    return(mutacion(p[i,],n))}
 }
 
 para.rep<-function(i){
-  padres <- sample(1:tam, 2,replace=TRUE)
+  padres <- sample(1:tam, 2, replace=FALSE)
   hijos <- reproduccion(p[padres[1],], p[padres[2],], n)
   p.hijo<- hijos[1:n] # primer hijo
   s.hijo<- hijos[(n+1):(2*n)] # segundo hijo
@@ -108,43 +119,45 @@ para.obj<-function(i){
   return(datos)
 }
 
-n <- 50
-pesos <- generador.pesos(n, 15, 80)
-valores <- generador.valores(pesos, 10, 500)
-capacidad <- round(sum(pesos) * 0.65)
-optimo <- knapsack(capacidad, pesos, valores)
-pm <- 0.05
-rep <- 50
-resultados<-data.frame()
-for (replicas in 1:ciclos){
-  for (init in seq(200,500,100)){
-    
-    source('~/GitHub/Simulacion/Simulacion/P10/Cod_P10_T10.R')
-    t.paralel<-cbind("paralelo",replicas, init,t)
-    
-    source('~/GitHub/Simulacion/Simulacion/P10/Cod_P10.R')
-    t.original<-cbind("original",replicas,init,t)
-    
-    resultados<-rbind(resultados,t.paralel,t.original)
-    
-    
-  }
-  print(replicas)
+registerDoParallel(makeCluster(detectCores() - 1))
+
+for (iter in 1:tmax) {
+  
+  p$obj <- NULL
+  p$fact <- NULL
+  
+  res.mut<-foreach(i=1:tam,combine = rbind)%dopar% para.mut(i)
+  mutados <- data.frame(matrix(unlist(res.mut), ncol=n))
+  
+  colnames(mutados)<-c(1:n)
+  colnames(p)<-c(1:n)
+  
+  p<-rbind(p,mutados)
+  
+  p<-rbind(p,foreach(i=1:rep,combine=rbind)%dopar% para.rep(i))
+  
+  tam <- dim(p)[1]
+  obj <- double()
+  fact <- integer()
+  
+  rownames(p)<-c(1:dim(p)[1])
+  
+  p<- data.frame(sapply(p, function(x) as.numeric(as.character(x))))
+  p<-cbind(p,foreach(i=1:tam,.combine=rbind)%dopar% para.obj(i))
+  
+  mantener <- order(-p[, (n + 2)], -p[, (n + 1)])[1:init]
+  
+  p <- p[mantener,]
+  tam <- dim(p)[1]
+  assert(tam == init)
+  factibles <- p[p$fact == TRUE,]
+  mejor <- max(factibles$obj)
+  mejores <- c(mejores, mejor)
+  
 }
+stopImplicitCluster()
 
-save.image(file="Resultados_Tarea.RData")
 
-library(ggplot2)
+tf<-Sys.time()
 
-colnames(resultados)<-c("Tipo","Replica","Init","Tiempo")
-resultados$Tiempo<-as.numeric(levels(resultados$Tiempo))[resultados$Tiempo]
-resultados$Tipo <- as.factor(resultados$Tipo)
-resultados$Init <- as.factor(resultados$Init)
-
-png("Variacion_pob.png")
-ggplot(data=resultados, aes(x = Init, y= Tiempo,fill = Tipo)) +
-  geom_boxplot(position=position_dodge(1))+
-  ylab("Tiempo (s)") +
-  xlab("Población")
-dev.off()
-
+t<-tf-ti

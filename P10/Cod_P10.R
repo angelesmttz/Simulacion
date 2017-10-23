@@ -1,9 +1,4 @@
 ti<-Sys.time()
-p <- poblacion.inicial(n, init)
-tam <- dim(p)[1]
-assert(tam == init)
-mejores <- double()
-
 
 for (iter in 1:tmax) {
   p$obj <- NULL
