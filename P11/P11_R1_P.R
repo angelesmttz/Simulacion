@@ -69,12 +69,10 @@ registerDoParallel(makeCluster(detectCores() - 1))
   val <- matrix(rep(NA, k * n), nrow=n, ncol=k)
   
   val<-foreach(j=1:k,.combine=cbind)%dopar%evaluacion(j)
- 
-  mejor1 <- which.max(sign[1] * val[,1])
-  mejor2 <- which.max(sign[2] * val[,2])
+
   cual <- c("max", "min")
-  xl <- paste("Primer objetivo (", cual[minim[1] + 1], ")", sep="")
-  yl <- paste("Segundo objetivo (", cual[minim[2] + 1], ")", sep="")
+  xl <- paste("1° objetivo (", cual[minim[1] + 1], ")", sep="")
+  yl <- paste("2° objetivo (", cual[minim[2] + 1], ")", sep="")
   
   dominadores <- integer()
   dominadores<-foreach(i=1:n,.combine=c)%dopar% dominios(i)
@@ -87,12 +85,12 @@ registerDoParallel(makeCluster(detectCores() - 1))
   frente <- subset(val, no.dom) # solamente las no dominadas
   nf= dim(frente)[1]
   
-  png("Frente_original11.png")
-  plot(val[,1], val[,2], xlab=paste(xl, "mejor con cuadro azul"),
-       ylab=paste(yl,"mejor con bolita naranja"),
-       main="Ejemplo bidimensional")
+  png("Frentes.png",pointsize=16)
+  par(mfrow=c(3,1))
+  plot(val[,1], val[,2], xlab=xl,
+       ylab=yl)
   points(frente[,1], frente[,2], col="red", pch=16, cex=1.5)
-  graphics.off()
+  
   
   if (nf>2){
   frente<-as.data.frame(frente)
@@ -119,19 +117,16 @@ registerDoParallel(makeCluster(detectCores() - 1))
   
   diverso<-subset(n.frente,mantener)
   
-  png("Frente_propuesto11.png")
-  plot(val[,1], val[,2], xlab=paste(xl, "mejor con cuadro azul"),
-       ylab=paste(yl,"mejor con bolita naranja"),
-       main="Ejemplo bidimensional")
+  plot(val[,1], val[,2], xlab=xl,
+       ylab=yl)
   points(frente[,1], frente[,2], col="red", pch=16, cex=1.5)
   points(diverso[,1], diverso[,2], col="green", pch=16, cex=1.5)
-  graphics.off()
+ 
   
-  png("Frente_nuevo11.png")
-  plot(val[,1], val[,2], xlab=paste(xl, "mejor con cuadro azul"),
-       ylab=paste(yl,"mejor con bolita naranja"),
-       main="Ejemplo bidimensional")
+  plot(val[,1], val[,2], xlab=xl,
+       ylab=yl)
   points(diverso[,1], diverso[,2], col="green", pch=16, cex=1.5)
+  
   graphics.off()
   
   }
