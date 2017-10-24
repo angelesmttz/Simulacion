@@ -19,8 +19,6 @@ for (i in 1:n){
   no.dom<-c(no.dom,dominadores[i]==0)
 }
 
-
-
 frente <- subset(val, no.dom) # solamente las no dominadas
 
 

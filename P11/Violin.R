@@ -96,13 +96,12 @@ colnames(datos)<-c("Objetivos","Soluciones","Replica")
 datos$Objetivos<-as.factor(datos$Objetivos)
 
 library(ggplot2)
-png("Frecuncia_objetivos_no.png")
+
 ggplot(data=datos,aes(datos$Objetivos,(datos$Soluciones*100/n))) +
-  geom_violin(scale="width",fill="burlywood3")+
-  geom_boxplot(width=0.25,fill="aquamarine4", color="black",outlier.size = 0.1) +
+  geom_violin(scale="width",fill="dodgerblue4")+
+  geom_boxplot(width=0.25,fill="gainsboro", color="black",outlier.size = 0.1) +
   xlab("Objetivos") +
-  ylab("Frecuencia (%)")+
-  theme_bw()
-dev.off()
+  ylab("Frecuencia (%)")
+ggsave("Frecuncia_objetivos_no.png")
 
 

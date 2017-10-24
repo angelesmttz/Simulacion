@@ -1,10 +1,7 @@
-ciclos<-5
 md <- 3
 tc <- 5
 vc<-4
-graficos<-FALSE
 k<-2
-vark<-2:16
 n<-200
 datos<-data.frame()
 
@@ -33,6 +30,7 @@ eval <- function(pol, vars, terms) {
   }
   return(value)
 }
+
 domin.by <- function(target, challenger, total) {
   if (sum(challenger < target) > 0) {
     return(FALSE) # hay empeora
@@ -81,20 +79,27 @@ registerDoParallel(makeCluster(detectCores() - 1))
   for (i in 1:n){
     no.dom<-c(no.dom,dominadores[i]==0)
   }
+  stopImplicitCluster()
   
   frente <- subset(val, no.dom) # solamente las no dominadas
   nf= dim(frente)[1]
-  
-  png("Frentes.png",pointsize=16)
-  par(mfrow=c(3,1))
-  plot(val[,1], val[,2], xlab=xl,
-       ylab=yl)
-  points(frente[,1], frente[,2], col="red", pch=16, cex=1.5)
-  
-  
-  if (nf>2){
   frente<-as.data.frame(frente)
   colnames(frente)<-c("x","y")
+  val<-as.data.frame(val)
+  colnames(val)<-c("x","y")
+  
+  library(ggplot2)
+  
+  ggplot()+
+    geom_point(data=val,aes(x,y))+
+    xlab(xl)+ylab(yl)+
+    geom_point(data=frente,aes(x,y),color="red",size=2)+
+    ggtitle("a) Frente Original")
+  ggsave("Frente_original.png")
+  
+ 
+  
+  if (nf>2){
   n.frente<-frente[order(frente$x),]
   
   distancia<-c()
@@ -102,6 +107,7 @@ registerDoParallel(makeCluster(detectCores() - 1))
     d<- sqrt((n.frente[i,]$x-n.frente[i+1,]$x)**2+(n.frente[i,]$y-n.frente[i+1,]$y)**2)
     distancia<-c(distancia,d)
   }
+  
   rd<-mean(distancia)
   
   mantener<-rep(FALSE,nf)
@@ -117,16 +123,21 @@ registerDoParallel(makeCluster(detectCores() - 1))
   
   diverso<-subset(n.frente,mantener)
   
-  plot(val[,1], val[,2], xlab=xl,
-       ylab=yl)
-  points(frente[,1], frente[,2], col="red", pch=16, cex=1.5)
-  points(diverso[,1], diverso[,2], col="green", pch=16, cex=1.5)
- 
+  ggplot()+
+    geom_point(data=val,aes(x,y))+
+    xlab(xl)+ylab(yl)+
+    geom_point(data=frente,aes(x,y),color="red",size=2)+
+    geom_point(data=diverso,aes(x,y),color="green",size=3)+
+    ggtitle("b) Ambos frentes")
+  ggsave("Ambos_frentes.png")
   
-  plot(val[,1], val[,2], xlab=xl,
-       ylab=yl)
-  points(diverso[,1], diverso[,2], col="green", pch=16, cex=1.5)
   
-  graphics.off()
   
-  }
+  ggplot()+
+    geom_point(data=val,aes(x,y))+
+    xlab(xl)+ylab(yl)+
+    geom_point(data=diverso,aes(x,y),color="green",size=3)+
+    ggtitle("c) Frente diversificado")
+    ggsave("Frente_diverso.png")
+  
+    }

@@ -86,11 +86,9 @@ resultados$Tiempo<-as.numeric(levels(resultados$Tiempo))[resultados$Tiempo]
 
 
 library(ggplot2)
-png("Paralelizacion_k5.png")
-ggplot(data=resultados, aes(x = Soluciones, y= Tiempo,color=Objetivos)) +
-  geom_boxplot()+facet_grid(Tipo~.,switch = "both")+
+
+ggplot(data=resultados, aes(x = Soluciones, y= Tiempo,color=Tipo)) +
+  geom_boxplot()+facet_grid(Objetivos~.,switch = "both")+
   theme(legend.position = "bottom")+
   theme_bw()
-  
-dev.off()
-
+ ggsave("Paralelizacion_k5.png")
