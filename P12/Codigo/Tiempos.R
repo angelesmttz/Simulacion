@@ -30,4 +30,17 @@ resultados$Pruebas<-as.factor(resultados$Pruebas)
 
 library(ggplot2)
 ggplot()+
-  geom_boxplot(data=resultados,aes(x=Pruebas,y=Tiempo,fill=Tipo))
+  geom_boxplot(data=resultados,aes(x=Pruebas,y=Tiempo,fill=Tipo))+
+  ylab("Tiempo(s)")+xlab("Número de pruebas")
+ggsave("Variacion_tiempo.png")
+
+
+colnames(pruebas)<-c("Numero","Resultado","Correcto","Juicio","Tipo","Pruebas")
+pruebas$Juicio<-as.factor(pruebas$Juicio)
+pruebas$Tipo<-as.factor(pruebas$Tipo)
+pruebas$Pruebas<-as.factor(pruebas$Pruebas)
+pruebas$Correcto<-as.factor(pruebas$Correcto)
+pruebas$Numero<-rep(1,dim(pruebas)[1])
+
+ggplot(data=pruebas,aes(x=Correcto))+
+  geom_histogram(fill=Juicio)+facet_grid(Pruebas~Tipo)
