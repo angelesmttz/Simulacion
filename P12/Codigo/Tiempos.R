@@ -1,9 +1,10 @@
 resultados<-data.frame()
-pruebas<-data.frame()
 
 suppressMessages(library(doParallel))
 registerDoParallel(makeCluster(detectCores() - 1))
-
+negro<-0.995
+gris<-0.92
+blanco<-0.002
 
 for (replica in 1:10){
   for (t.pruebas in seq(300,900,300)){
@@ -15,15 +16,14 @@ for (replica in 1:10){
   paralelo<-cbind(replica,"Paralelo",t.pruebas,tiempo,acierto)
 
   resultados<-rbind(resultados,secuencial,paralelo)
-  pruebas<-rbind(pruebas,pruebas.sec,pruebas.par)
-  }
+   }
   print(replica)
 }
 
 stopImplicitCluster()
 
 save.image(file="Tarea_P12.RData")
-load("~/GitHub/Simulacion/Simulacion/P12/Codigo/Tarea_P12.RData")
+#load("~/GitHub/Simulacion/Simulacion/P12/Codigo/Tarea_P12.RData")
 colnames(resultados)<-c("Replica","Tipo","Pruebas","Tiempo","Acierto")
 resultados$Tiempo<-as.numeric(levels(resultados$Tiempo))[resultados$Tiempo]
 resultados$Tipo<-as.factor(resultados$Tipo)

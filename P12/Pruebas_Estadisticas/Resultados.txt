@@ -1,0 +1,38 @@
+[1] 300
+
+	Welch Two Sample t-test
+
+data:  dat.org and dat.par
+t = 2.9423, df = 17.679, p-value = 0.008833
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ 0.3318114 1.9964714
+sample estimates:
+mean of x mean of y 
+ 11.18199  10.01785 
+
+[1] 600
+
+	Welch Two Sample t-test
+
+data:  dat.org and dat.par
+t = 2.3095, df = 13.915, p-value = 0.03679
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ 0.1903861 5.1892082
+sample estimates:
+mean of x mean of y 
+ 14.19503  11.50523 
+
+[1] 900
+
+	Welch Two Sample t-test
+
+data:  dat.org and dat.par
+t = 6.9772, df = 12.968, p-value = 9.793e-06
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ 3.162727 6.000757
+sample estimates:
+mean of x mean of y 
+ 15.66324  11.08150 

@@ -23,7 +23,7 @@ resultados<-rbind(resultados,proba)
 stopImplicitCluster()
 
 save.image(file="Reto1.RData")
-load("~/GitHub/Simulacion/Simulacion/P12/Codigo/Reto1.RData")
+#load("~/GitHub/Simulacion/Simulacion/P12/Codigo/Reto1.RData")
 colnames(resultados)<-c("Negro","Gris","Blanco","Acierto")
 
 library(ggplot2)
