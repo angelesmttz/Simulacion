@@ -1,6 +1,5 @@
 ti<-Sys.time()
 
-
 binario <- function(d, l) {
   b <-  rep(FALSE, l)
   while (l > 0 | d > 0) {
@@ -32,20 +31,15 @@ prueba<-function(t){
     salida[i] <- resultado
   }
   
-  print(salida)
-  r <- min(decimal(salida, n), k) # todos los no-existentes van al final
+   r <- min(decimal(salida, n), k) # todos los no-existentes van al final
   
-  if (r==d){
-    res<-cbind(t,r,d,"Correcto","Paralelo",t.pruebas)
-  }else{res<-cbind(t,r,d,"Incorrecto","Paralelo",t.pruebas)}
-  return(res)
+  if (r==d){return(TRUE)}
 }
 
-setwd("~/GitHub/Simulacion/Simulacion/P12/Codigo")
 modelos <- read.csv("digitos.modelo", sep=" ", header=FALSE, stringsAsFactors=F)
-modelos[modelos=='n'] <- 0.995
-modelos[modelos=='g'] <- 0.92
-modelos[modelos=='b'] <- 0.002
+modelos[modelos=='n'] <- negro
+modelos[modelos=='g'] <- gris
+modelos[modelos=='b'] <- blanco
 
 r <- 5
 c <- 3
@@ -78,7 +72,8 @@ for (t in 1:5000) { # entrenamiento
   }
 }
 
-pruebas.par<-foreach(t=1:t.pruebas,.combine=rbind)%dopar%prueba(t)
+acierto<-foreach(t=1:t.pruebas,.combine=rbind)%dopar%prueba(t)
+acierto<-sum(acierto)/t.pruebas*100
 
 tf<-Sys.time()
 

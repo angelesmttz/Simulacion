@@ -9,10 +9,10 @@ for (replica in 1:10){
   for (t.pruebas in seq(300,900,300)){
     
   source('~/GitHub/Simulacion/Simulacion/P12/Codigo/P12.R')
-  secuencial<-cbind(replica,"Original",t.pruebas,tiempo)
+  secuencial<-cbind(replica,"Original",t.pruebas,tiempo,acierto)
   
   source('~/GitHub/Simulacion/Simulacion/P12/Codigo/P12_T12.R')
-  paralelo<-cbind(replica,"Paralelo",t.pruebas,tiempo)
+  paralelo<-cbind(replica,"Paralelo",t.pruebas,tiempo,acierto)
 
   resultados<-rbind(resultados,secuencial,paralelo)
   pruebas<-rbind(pruebas,pruebas.sec,pruebas.par)
@@ -23,7 +23,8 @@ for (replica in 1:10){
 stopImplicitCluster()
 
 save.image(file="Tarea_P12.RData")
-colnames(resultados)<-c("Replica","Tipo","Pruebas","Tiempo")
+load("~/GitHub/Simulacion/Simulacion/P12/Codigo/Tarea_P12.RData")
+colnames(resultados)<-c("Replica","Tipo","Pruebas","Tiempo","Acierto")
 resultados$Tiempo<-as.numeric(levels(resultados$Tiempo))[resultados$Tiempo]
 resultados$Tipo<-as.factor(resultados$Tipo)
 resultados$Pruebas<-as.factor(resultados$Pruebas)
@@ -35,12 +36,9 @@ ggplot()+
 ggsave("Variacion_tiempo.png")
 
 
-colnames(pruebas)<-c("Numero","Resultado","Correcto","Juicio","Tipo","Pruebas")
-pruebas$Juicio<-as.factor(pruebas$Juicio)
-pruebas$Tipo<-as.factor(pruebas$Tipo)
-pruebas$Pruebas<-as.factor(pruebas$Pruebas)
-pruebas$Correcto<-as.factor(pruebas$Correcto)
-pruebas$Numero<-rep(1,dim(pruebas)[1])
+resultados$Acierto<-as.numeric(levels(resultados$Acierto))[resultados$Acierto]
 
-ggplot(data=pruebas,aes(x=Correcto))+
-  geom_histogram(fill=Juicio)+facet_grid(Pruebas~Tipo)
+ggplot()+
+geom_boxplot(data=resultados,aes(x=Pruebas,y=Acierto,fill=Tipo))+
+ylab("Acierto (%)")+xlab("Número de pruebas")
+ggsave("Variacion_acierto.png")

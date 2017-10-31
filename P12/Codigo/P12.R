@@ -68,12 +68,13 @@ for (t in 1:t.pruebas) { # prueba
     salida[i] <- resultado
   }
   r <- min(decimal(salida, n), k) # todos los no-existentes van al final
-  if(r==d){datos<-cbind(t,r,d,"Correcto","Secuencial",t.pruebas)}else{
-    datos<-cbind(t,r,d,"Incorrecto","Secuencial",t.pruebas)}
+  if(r==d){datos<-cbind(r,d,"Correcto","Secuencial",t.pruebas)}else{
+    datos<-cbind(r,d,"Incorrecto","Secuencial",t.pruebas)}
 
   pruebas.sec<-rbind(pruebas.sec,datos)
   }
 
+acierto<-dim(pruebas.sec[pruebas.sec$V3=="Correcto",])[1]*100/t.pruebas
 
 tf<-Sys.time()
 tiempo<-difftime(tf,ti,units="secs")
