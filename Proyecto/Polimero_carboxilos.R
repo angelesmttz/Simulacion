@@ -36,16 +36,16 @@ polimero<-foreach(1:moleculas.cmc,.combine=c)%dopar%polimerizacion()
 
 stopImplicitCluster()
 
-l<-1
+l<-2
 
 cadenas<-as.data.frame(polimero)
 cadenas$x<-0
 cadenas$y<-0
 
-cadenas[1,]$x<-runif(1,-l,l)
-cadenas[1,]$y<-runif(1,-l,l)
+cadenas[1,]$x<-runif(1,0,l)
+cadenas[1,]$y<-runif(1,0,l)
 
-paso<-l/30
+paso<-l/100
 dimension<-c(1:2)
 dim(cadenas)[1]
 
@@ -58,19 +58,21 @@ for (g in 2:dim(cadenas)[1]){
          cadenas[g,d+1]<-cadenas[g-1,d+1]+paso  
        }
       
-      #if (cadenas[g,d+1]<-l){cadenas[g,d+1]<-cadenas[d,d+1]+l}
+     # if (cadenas[g,d+1]<0){cadenas[g,d+1]<-cadenas[d,d+1]+l}
       #if (cadenas[g,d+1]>l){cadenas[g,d+1]<-cadenas[d,d+1]-l}
       
     }
-    print(g)
+    print(round(g*100/dim(cadenas)[1]))
 }
-  
 
 library(ggplot2)
-ggplot()+
-  geom_point(data=cadenas,aes(x=cadenas$x,y=cadenas$y,color=cadenas$polimero))
+polymer<-ggplot()+
+  geom_point(data=cadenas,aes(x=cadenas$x,y=cadenas$y,color=factor(cadenas$polimero)))+
+  xlab("x")+ylab("y")
 
+Ag<- data.frame(x = runif(atomos.plata,min(cadenas$x),max(cadenas$x)),
+                y=runif(atomos.plata,min(cadenas$y),max(cadenas$y)))  
 
-
-
+polymer+
+  geom_point(data=Ag,aes(x=Ag$x,y=Ag$y))
 
