@@ -5,9 +5,12 @@ contenido.plata<-1 #mg
 mw<-250*(10**3) #k(g/mol)
 DS=1.2
 temperatura<-90 #Centigrados
-tiempo<-24 #horas
-reduccion<-0.4*(10**-17)
-
+tiempo<-10 #horas
+reduccion<-0.4*(10**-15)
+Ag.point<-0.7
+cmc.point<-1
+n.point<-1.2
+options(digits=3)
 
 #####Calculos######
 avogrado<-6.023*(10**23) #avogrado
@@ -21,8 +24,7 @@ setwd("~/GitHub/Simulacion/Simulacion/Proyecto")
 
 #####Funciones######
 polimerizacion<-function (){
-  base<-rep(NA,7)
-  
+  base<-rep("P",7)
   for (j in 1:length(posiciones)){
     cation<-posiciones[j]
     if (runif(1,0,1)<(DS/3)){
@@ -57,11 +59,12 @@ colocar<-dim(cadenas)[1]
 
 for (g in 2:colocar){
     for (d in 1:dimension){
-    paso<-l/100
+    paso<-0.25
     if(runif(1)< 0.5){paso<--paso}
     cadenas[g,d+1]<-cadenas[g-1,d+1]+paso
-        }
-      print(round(g*100/colocar))
+    }
+  
+        print(round(g*100/colocar))
 }
 
 # Considerar que el polimero no es lineal si no ciclico
@@ -73,34 +76,42 @@ max.x<-max(cadenas$x)
 max.y<-max(cadenas$y)
 
 
+poli<-cadenas[cadenas$polimero=="P",]
+nucleos<-cadenas[cadenas$polimero!="P",]
+cationes<-dim(nucleos)[1]
 
-  ggplot(data=cadenas,aes(x=cadenas$x,y=cadenas$y))+
-  geom_point(aes(color=factor(cadenas$polimero)),shape=20,size=0.5)+
-  xlab("x")+ylab("y")+
-  ggtitle("Pol\u{00ed}mero en soluci\u{00fa}n")+
-  scale_color_discrete(name="\u{00C1}tomos de\nplata",
-                       breaks=c(0, NA),
-                       labels=c(0, "Pol\u{00ed}mero"))+
-  theme(plot.title = element_text(hjust = 0.5),
-        panel.background = element_rect(fill = "white"))
-  ggsave("Polimero.png")
-  
+colnames(nucleos)<-c("Cantidad","x","y")
+nucleos$Cantidad<-as.numeric(levels(nucleos$Cantidad))[nucleos$Cantidad]
+#nucleos <- data.frame(sapply(nucleos, function(x) as.numeric(as.character(x))))
 
+  ggplot()+
+    geom_point(data=poli,aes(poli$x,poli$y),color="skyblue3")+
+    geom_point(data=nucleos,aes(nucleos$x,nucleos$y,
+                              color=factor(nucleos$Cantidad)),size=n.point)+
+    xlab("x")+ylab("y")+
+    ggtitle("Pol\u{00ed}mero en soluci\u{00fa}n")+
+    theme(plot.title = element_text(hjust = 0.5),
+    panel.background = element_rect(fill = "white"))
+    ggsave("Polimero.png")
+
+    
+atomos.plata<-atomos.plata*(10**-1)
 Ag<- data.frame(x = runif(atomos.plata,min(cadenas$x),max(cadenas$x)),
                 y=runif(atomos.plata,min(cadenas$y),max(cadenas$y)),
                 dx=runif(atomos.plata,-max.x/50,max.x/50),
                 dy=runif(atomos.plata,-max.y/50,max.y/50))  
 
-ggplot(data=cadenas,aes(x=cadenas$x,y=cadenas$y))+
-  geom_point(aes(color=factor(cadenas$polimero)),shape=20,size=0.5)+
-  xlab("x")+ylab("y")+
-  ggtitle("Estado inicial")+
-  scale_color_discrete(name="\u{00C1}tomos de\nplata",
-                       breaks=c(0, NA),
-                       labels=c(0, "Pol\u{00ed}mero"))+
-  theme(plot.title = element_text(hjust = 0.5),
+  ggplot()+
+    geom_point(data=poli,aes(poli$x,poli$y),color="skyblue3")+
+    geom_point(data=nucleos,aes(nucleos$x,nucleos$y,
+                              color=factor(nucleos$polimero)))+
+    xlab("x")+ylab("y")+
+    ggtitle("Estado inicial")+
+    scale_color_discrete(name="\u{00C1}tomos de\nplata")+
+    theme(plot.title = element_text(hjust = 0.5),
         panel.background = element_rect(fill = "white"))+
-  geom_point(data=Ag,aes(x=Ag$x,y=Ag$y),color="darkgoldenrod1")
+    geom_point(data=Ag,aes(x=Ag$x,y=Ag$y),color="darkgoldenrod1",
+             size=Ag.point)
 ggsave("Inicial.png")
 
 #save.image(file="P_C_Listo.RData")
@@ -117,50 +128,47 @@ Ag.v<- round(sqrt(3*R*T.k/mol.plata))#m/s
 
 ######Union######
 
-p<-function (d){
-  return(1/d)
-}
-
-radio<-0.005
-p<-0.5  ###Hacer funcion a la distancia
+radio<-0.05
+p<-0.75  ###Hacer funcion a la distancia
 Ag$estado<-"F"
 
 for (hora in seq(0,tiempo,1)){
-  
-  for (r in 1:colocar){
-     if (is.na(cadenas[r,]$polimero)){
-      cadenas[r,]$polimero<-NA}
-        else{
-          for (u in 1:atomos.plata){
-            if (Ag$estado=="F"){
-          dx<-Ag[u,]$x-cadenas[r,]$x
-          dy<-Ag[u,]$y-cadenas[r,]$y
+     for (r in 1:cationes){
+        for (u in 1:atomos.plata){
+            if (Ag[u,]$estado=="F"){
+              if(Ag[u,]$x<nucleos$x+radio&
+                 Ag[u,]$x>nucleos$x-radio){
+                if(Ag[u,]$y<nucleos$y+radio&
+                   Ag[u,]$y>nucleos$y-radio){
+          dx<-Ag[u,]$x-nucleos[r,]$x
+          dy<-Ag[u,]$y-nucleos[r,]$y
           d<- sqrt(dx^2 + dy^2)
                   if (d<radio){
-             if (runif(1)<p){
-        cadenas[r,]$polimero<-cadenas[r,]$polimero+1
+            # if (runif(1)<p)#{
+        nucleos[r,]$polimero<-nucleos[r,]$polimero+1
         Ag[u,]$estado<-"O"
         Ag[u,]$dx<-0
         Ag[u,]$dy<-0
-                    }
-                  }
+             #       #}
+                  }else{nucleos[r,]$polimero<-nucleos[r,]$polimero}
+                }else{nucleos[r,]$polimero<-nucleos[r,]$polimero}
+              }else{nucleos[r,]$polimero<-nucleos[r,]$polimero}
+        }else{nucleos[r,]$polimero<-nucleos[r,]$polimero}
         }
-    }
-        }
-  print(round(r*100/colocar))
-  }
-
+     }
+    
 Ag.free<-Ag[Ag$estado=="F",]
-ggplot(data=cadenas,aes(x=cadenas$x,y=cadenas$y))+
-  geom_point(aes(color=factor(cadenas$polimero)),shape=20,size=0.5)+
+
+ggplot(data=Ag.free,aes(Ag.free$x,Ag.free$y))+
+  geom_point(color="darkgoldenrod1",size=Ag.point)+
+  geom_point(data=poli,aes(poli$x,poli$y),color="skyblue3")+
+  geom_point(data=nucleos,aes(nucleos$x,nucleos$y,
+                              color=factor(nucleos$polimero)))+
   xlab("x")+ylab("y")+
   ggtitle(paste("Paso ",hora))+
-  scale_color_discrete(name="\u{00C1}tomos de\nplata",
-                       breaks=c(0:10, NA),
-                       labels=c(0:10, "Pol\u{00ed}mero"))+
+  scale_color_discrete(name="\u{00C1}tomos de\nplata")+
   theme(plot.title = element_text(hjust = 0.5),
-        panel.background = element_rect(fill = "white"))+
-  geom_point(data=Ag.free,aes(x=Ag.free$x,y=Ag.free$y),color="darkgoldenrod1")
+        panel.background = element_rect(fill = "white"))
 ggsave(paste("Paso_",hora,".png"))
 
 
@@ -171,4 +179,6 @@ Ag[Ag$x > max.x,]$x<-Ag[Ag$x > max.x,]$x-max.x
 Ag[Ag$y < 0,]$y<-Ag[Ag$y < 0,]$y+max.y
 Ag[Ag$y > max.y,]$y<-Ag[Ag$y > max.y,]$y-max.y
 
+print(hora)
 }
+
