@@ -1,11 +1,14 @@
 #####Condiciones######
 concentracion.cmc<-15 #mg/mL
 volumen.cmc<-20 #mL
-contenido.plata<-1 #mg
+contenido.plata<-1.5 #mg
 mw<-250*(10**3) #k(g/mol)
 DS=1.2
 temperatura<-90 #Centigrados
 tiempo<-10 #horas
+
+
+#####Ajustes####
 reduccion<-0.4*(10**-15)
 Ag.point<-0.7
 cmc.point<-1
@@ -22,6 +25,40 @@ atomos.plata<- round(avogrado*plata*reduccion/masa.plata)
 posiciones<-c(2,3,5)
 setwd("~/GitHub/Simulacion/Simulacion/Proyecto")
 
+#####Experimentales#####
+Grado<-1.2
+taille<- c(21.9, 21.1,19,15.5)
+var<-c(7.5,5,7.9,3.4)
+silver<-c(1.5,3,6,8)
+experimentales<-data.frame(Sustitucion=Grado,Plata=silver,
+                           Variacion=var,Size=taille)
+Ag.r<-160*(10**-12)
+Ag.A<-pi*(Ag.r**2)
+
+for (f in 1:dim(experimentales)[1]){
+  if (experimentales[f,]$Sustitucion==DS & 
+      experimentales[f,]$Plata==contenido.plata){
+    Ag.exp<-rnorm(500,mean=experimentales[f,]$Size,
+                  sd=experimentales[f,]$Variacion)
+    Ag.exp<-data.frame(Ag.exp)
+  }
+}
+colnames(Ag.exp)<-"Size"
+
+Ag.exp$Area<-pi*((Ag.exp$Size*(10**-9))**2)/4
+Ag.exp$nanoparticulas<-Ag.exp$Area/Ag.A
+
+
+ggplot(data=Ag.exp,aes(Ag.exp$nanoparticulas))+
+  geom_histogram(bins=50, color = "black", fill = "gray")+
+  ylab("Frecuencia")+
+  xlab("\u{00C1}tomos de plata")+
+  ggtitle(paste(contenido.plata, " mg de plata"))+
+  theme(plot.title = element_text(hjust = 0.5),
+        panel.background = element_rect(fill = "white"))
+  ggsave (paste("Experimental_",contenido.plata,".png"))
+
+
 #####Funciones######
 polimerizacion<-function (){
   base<-rep("P",7)
@@ -29,7 +66,7 @@ polimerizacion<-function (){
     cation<-posiciones[j]
     if (runif(1,0,1)<(DS/3)){
       base[cation]<-0
-    }#else{base[cation]<-"H"}
+    }
   }
   return(base)
 }
@@ -58,13 +95,14 @@ dimension<-2
 colocar<-dim(cadenas)[1]
 
 for (g in 2:colocar){
+  
     for (d in 1:dimension){
-    paso<-0.25
+    paso<-0.002
     if(runif(1)< 0.5){paso<--paso}
     cadenas[g,d+1]<-cadenas[g-1,d+1]+paso
     }
   
-        print(round(g*100/colocar))
+    print(round(g*100/colocar))
 }
 
 # Considerar que el polimero no es lineal si no ciclico
@@ -82,14 +120,14 @@ cationes<-dim(nucleos)[1]
 
 colnames(nucleos)<-c("Cantidad","x","y")
 nucleos$Cantidad<-as.numeric(levels(nucleos$Cantidad))[nucleos$Cantidad]
-#nucleos <- data.frame(sapply(nucleos, function(x) as.numeric(as.character(x))))
 
   ggplot()+
     geom_point(data=poli,aes(poli$x,poli$y),color="skyblue3")+
     geom_point(data=nucleos,aes(nucleos$x,nucleos$y,
                               color=factor(nucleos$Cantidad)),size=n.point)+
+    scale_color_discrete(name="\u{00C1}tomos de\nplata")+
     xlab("x")+ylab("y")+
-    ggtitle("Pol\u{00ed}mero en soluci\u{00fa}n")+
+    ggtitle("Pol\u{00ed}mero en soluci\u{00f3}n")+
     theme(plot.title = element_text(hjust = 0.5),
     panel.background = element_rect(fill = "white"))
     ggsave("Polimero.png")
@@ -104,7 +142,7 @@ Ag<- data.frame(x = runif(atomos.plata,min(cadenas$x),max(cadenas$x)),
   ggplot()+
     geom_point(data=poli,aes(poli$x,poli$y),color="skyblue3")+
     geom_point(data=nucleos,aes(nucleos$x,nucleos$y,
-                              color=factor(nucleos$polimero)))+
+                              color=factor(nucleos$Cantidad)))+
     xlab("x")+ylab("y")+
     ggtitle("Estado inicial")+
     scale_color_discrete(name="\u{00C1}tomos de\nplata")+
@@ -128,32 +166,23 @@ Ag.v<- round(sqrt(3*R*T.k/mol.plata))#m/s
 
 ######Union######
 
-radio<-0.05
-p<-0.75  ###Hacer funcion a la distancia
+radio<-abs(paso)/2
 Ag$estado<-"F"
 
 for (hora in seq(0,tiempo,1)){
      for (r in 1:cationes){
         for (u in 1:atomos.plata){
             if (Ag[u,]$estado=="F"){
-              if(Ag[u,]$x<nucleos$x+radio&
-                 Ag[u,]$x>nucleos$x-radio){
-                if(Ag[u,]$y<nucleos$y+radio&
-                   Ag[u,]$y>nucleos$y-radio){
           dx<-Ag[u,]$x-nucleos[r,]$x
           dy<-Ag[u,]$y-nucleos[r,]$y
           d<- sqrt(dx^2 + dy^2)
                   if (d<radio){
-            # if (runif(1)<p)#{
-        nucleos[r,]$polimero<-nucleos[r,]$polimero+1
+        nucleos[r,]$Cantidad<-nucleos[r,]$Cantidad+1
         Ag[u,]$estado<-"O"
         Ag[u,]$dx<-0
         Ag[u,]$dy<-0
-             #       #}
-                  }else{nucleos[r,]$polimero<-nucleos[r,]$polimero}
-                }else{nucleos[r,]$polimero<-nucleos[r,]$polimero}
-              }else{nucleos[r,]$polimero<-nucleos[r,]$polimero}
-        }else{nucleos[r,]$polimero<-nucleos[r,]$polimero}
+                }else{nucleos[r,]$Cantidad<-nucleos[r,]$Cantidad}
+                }else{nucleos[r,]$Cantidad<-nucleos[r,]$Cantidad}
         }
      }
     
@@ -163,7 +192,7 @@ ggplot(data=Ag.free,aes(Ag.free$x,Ag.free$y))+
   geom_point(color="darkgoldenrod1",size=Ag.point)+
   geom_point(data=poli,aes(poli$x,poli$y),color="skyblue3")+
   geom_point(data=nucleos,aes(nucleos$x,nucleos$y,
-                              color=factor(nucleos$polimero)))+
+                              color=factor(nucleos$Cantidad)))+
   xlab("x")+ylab("y")+
   ggtitle(paste("Paso ",hora))+
   scale_color_discrete(name="\u{00C1}tomos de\nplata")+
@@ -181,4 +210,3 @@ Ag[Ag$y > max.y,]$y<-Ag[Ag$y > max.y,]$y-max.y
 
 print(hora)
 }
-
