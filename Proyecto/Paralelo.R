@@ -4,13 +4,8 @@ volumen.cmc<-20 #mL
 contenido.plata<-1.5 #mg
 mw<-250*(10**3) #k(g/mol)
 DS=1.2
-temperatura<-90 #Centigrados
+temperatura<-90#Centigrados
 tiempo<-10 #horas
-
-
-#####Timing#####
-ti<-Sys.time()
-
 
 #####Ajustes####
 reduccion<-0.4*(10**-15)
@@ -18,6 +13,7 @@ options(digits=3)
 p.point<-0.9
 n.point<-1
 Ag.point<-0.7
+
 
 #####Calculos######
 avogrado<-6.023*(10**23) #avogrado
@@ -81,23 +77,38 @@ distribucion<-function(u){
     dy<-Ag[u,]$y-nucleos[r,]$y
     d<- sqrt(dx^2 + dy^2)
     
-    if (d<radio){Union<-TRUE}else{Union<-FALSE}
-    }else{Union<-FALSE}
-    
-  if(Union){
-    puntos<-data.frame(x=nucleos[r,]$x,y=nucleos[r,]$y,
-                       dx=0,dy=0,
-                       estado="O",Union=1)
-  }else{
-    puntos<-data.frame(x=Ag[u,]$x,y=Ag[u,]$y,
-                       dx=Ag[u,]$dx,dy=Ag[u,]$dy,
-                       estado=Ag[u,]$estado,Union=0)
-  }
-  
-   
-  return(puntos)
+    if (d<radio){U<-TRUE}else{U<-FALSE}
+      }else{U<-FALSE}
+
+  return(U)
 }
 
+dEstado<-function(i){
+  A<-Ag[i,]
+  if (State[i]){
+    A$estado<-"F"
+    A$dx<-0
+    A$dy<-0
+    }else{A<-A}
+    
+  return(A)
+}
+
+speed<-function(max.x,max.y){
+  P1<-c(0,0)
+  if(max.x>max.y){
+    P2<-c(400,max.x)
+    m<-(P2[2]-P1[2])/(P2[1]-P1[1])
+    f.speed<-m*T.k
+  }
+  
+  else{P2<-c(400,max.y)
+  m<-(P2[2]-P1[2])/(P2[1]-P1[1])
+  f.speed<-m*T.k}
+  
+  
+  return(f.speed)
+}
 #####Librerias#####
 suppressMessages(library(doParallel))
 registerDoParallel(makeCluster(detectCores() - 1))
@@ -151,12 +162,21 @@ ggplot()+
         panel.background = element_rect(fill = "white"))
 ggsave("Par_Polimero.png")
 
+#####Velocidad#####
 
-atomos.plata<-atomos.plata*(10**-1)
+R<- 8.3144598 #(Kg)(m^2)/(s^2)(k)(mol)
+T.k<-temperatura+273
+mol.plata<- masa.plata*(10^-3)
+k<- 1.38 *(10**-23) #J/K
+Ag.v<- round(sqrt(3*R*T.k/mol.plata))#m/s
+f.speed<-speed(max.x,max.y)
+
+#####Ubicacion.Plata####
+atomos.plata<-atomos.plata*(10**0)
 Ag<- data.frame(x = runif(atomos.plata,min(cadenas$x),max(cadenas$x)),
                 y=runif(atomos.plata,min(cadenas$y),max(cadenas$y)),
-                dx=runif(atomos.plata,-max.x/50,max.x/50),
-                dy=runif(atomos.plata,-max.y/50,max.y/50))  
+                dx=runif(atomos.plata,-max.x*f.speed,max.x*f.speed),
+                dy=runif(atomos.plata,-max.y*f.speed,max.y*f.speed))  
 
 ggplot()+
   geom_point(data=poli,aes(poli$x,poli$y),color="skyblue3",size=p.point)+
@@ -171,15 +191,6 @@ ggplot()+
              size=Ag.point)
 ggsave("Par_Inicial.png")
 
-#####Velocidad######
-
-R<- 8.3144598 #(Kg)(m^2)/(s^2)(k)(mol)
-T.k<-temperatura+273
-mol.plata<- masa.plata*(10^-3)
-k<- 1.38 *(10**-23) #J/K
-Ag.v<- round(sqrt(3*R*T.k/mol.plata))#m/s
-
-
 ######Union######
 
 radio<-abs(paso)/2
@@ -188,10 +199,15 @@ paralelo<-data.frame()
 
 for (hora in seq(0,tiempo,1)){
   ti<-Sys.time()
+  
   for (r in 1:cationes){
-  Ag<-foreach(u=1:atomos.plata,.combine=rbind)%dopar%distribucion (u)
-    nucleos[r,]$Cantidad<-sum(Ag$Union)
+    
+  State<-foreach(u=1:atomos.plata,.combine=c)%dopar%distribucion (u)
+  nucleos[r,]$Cantidad<-sum(State)
+  Ag<-foreach(i=1:atomos.plata,.combine=rbind)%dopar%dEstado(i)
+  
   }
+  
   tf<-Sys.time()
   t<-difftime(tf,ti,units="mins")
   lapso<-cbind(hora,t)
