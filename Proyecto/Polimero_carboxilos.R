@@ -72,10 +72,6 @@ polimerizacion<-function (){
   return(base)
 }
 
-manhattan <- function(p1, p2) {
-  return(sum(abs(p1 - p2)))
-}
-
 polimero<-c()
 for (i in 1:moleculas.cmc){
 base<-rep("P",7)

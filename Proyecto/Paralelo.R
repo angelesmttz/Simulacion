@@ -14,10 +14,10 @@ ti<-Sys.time()
 
 #####Ajustes####
 reduccion<-0.4*(10**-15)
-Ag.point<-0.7
-cmc.point<-1
-n.point<-1.2
 options(digits=3)
+p.point<-0.9
+n.point<-1
+Ag.point<-0.7
 
 #####Calculos######
 avogrado<-6.023*(10**23) #avogrado
@@ -48,7 +48,9 @@ for (f in 1:dim(experimentales)[1]){
 }
 colnames(Ag.exp)<-"Size"
 Ag.exp$Area<-pi*((Ag.exp$Size*(10**-9))**2)/4 #m**2
-Ag.exp$nanoparticulas<-Ag.exp$Area/Ag.A 
+Ag.exp$nanoparticulas<-Ag.exp$Area/Ag.A
+relacion<-atomos.plata*100/sum(Ag.exp$nanoparticulas)
+Ag.exp$nanoparticulas<-Ag.exp$nanoparticulas*relacion
 
 library(ggplot2)
 ggplot(data=Ag.exp,aes(Ag.exp$nanoparticulas))+
@@ -58,7 +60,7 @@ ggplot(data=Ag.exp,aes(Ag.exp$nanoparticulas))+
   ggtitle(paste(contenido.plata, " mg de plata"))+
   theme(plot.title = element_text(hjust = 0.5),
         panel.background = element_rect(fill = "white"))
-ggsave (paste("Experimental_",contenido.plata,".png"))
+ggsave (paste("Par_Experimental_",contenido.plata,".png"))
 
 
 #####Funciones######
@@ -72,11 +74,6 @@ polimerizacion<-function (){
   }
   return(base)
 }
-
-manhattan <- function(p1, p2) {
-  return(sum(abs(p1 - p2)))
-}
-
 
 distribucion<-function(u){
     if (Ag[u,]$estado=="F"){
@@ -105,10 +102,10 @@ distribucion<-function(u){
 suppressMessages(library(doParallel))
 registerDoParallel(makeCluster(detectCores() - 1))
 
+
+#####Ubicacion#####
 polimero<-foreach(1:moleculas.cmc,.combine=c)%dopar%polimerizacion()
-
 l<-2
-
 cadenas<-as.data.frame(polimero)
 cadenas$x<-0
 cadenas$y<-0
@@ -118,9 +115,8 @@ dimension<-2
 colocar<-dim(cadenas)[1]
 
 for (g in 2:colocar){
-  
-  for (d in 1:dimension){
-    paso<-0.002
+    for (d in 1:dimension){
+    paso<-runif(1,0.002,0.005)
     if(runif(1)< 0.5){paso<--paso}
     cadenas[g,d+1]<-cadenas[g-1,d+1]+paso
   }
@@ -145,7 +141,7 @@ colnames(nucleos)<-c("Cantidad","x","y")
 nucleos$Cantidad<-as.numeric(levels(nucleos$Cantidad))[nucleos$Cantidad]
 
 ggplot()+
-  geom_point(data=poli,aes(poli$x,poli$y),color="skyblue3")+
+  geom_point(data=poli,aes(poli$x,poli$y),color="skyblue3",size=p.point)+
   geom_point(data=nucleos,aes(nucleos$x,nucleos$y,
                               color=factor(nucleos$Cantidad)),size=n.point)+
   scale_color_discrete(name="\u{00C1}tomos de\nplata")+
@@ -153,7 +149,7 @@ ggplot()+
   ggtitle("Pol\u{00ed}mero en soluci\u{00f3}n")+
   theme(plot.title = element_text(hjust = 0.5),
         panel.background = element_rect(fill = "white"))
-ggsave("Polimero.png")
+ggsave("Par_Polimero.png")
 
 
 atomos.plata<-atomos.plata*(10**-1)
@@ -163,9 +159,9 @@ Ag<- data.frame(x = runif(atomos.plata,min(cadenas$x),max(cadenas$x)),
                 dy=runif(atomos.plata,-max.y/50,max.y/50))  
 
 ggplot()+
-  geom_point(data=poli,aes(poli$x,poli$y),color="skyblue3")+
+  geom_point(data=poli,aes(poli$x,poli$y),color="skyblue3",size=p.point)+
   geom_point(data=nucleos,aes(nucleos$x,nucleos$y,
-                              color=factor(nucleos$Cantidad)))+
+                              color=factor(nucleos$Cantidad)),size=n.point)+
   xlab("x")+ylab("y")+
   ggtitle("Estado inicial")+
   scale_color_discrete(name="\u{00C1}tomos de\nplata")+
@@ -173,7 +169,7 @@ ggplot()+
         panel.background = element_rect(fill = "white"))+
   geom_point(data=Ag,aes(x=Ag$x,y=Ag$y),color="darkgoldenrod1",
              size=Ag.point)
-ggsave("Inicial.png")
+ggsave("Par_Inicial.png")
 
 #####Velocidad######
 
@@ -188,28 +184,32 @@ Ag.v<- round(sqrt(3*R*T.k/mol.plata))#m/s
 
 radio<-abs(paso)/2
 Ag$estado<-"F"
+paralelo<-data.frame()
 
 for (hora in seq(0,tiempo,1)){
+  ti<-Sys.time()
   for (r in 1:cationes){
-   
   Ag<-foreach(u=1:atomos.plata,.combine=rbind)%dopar%distribucion (u)
-  
-  nucleos[r,]$Cantidad<-sum(Ag$Union)
-    }
+    nucleos[r,]$Cantidad<-sum(Ag$Union)
+  }
+  tf<-Sys.time()
+  t<-difftime(tf,ti,units="mins")
+  lapso<-cbind(hora,t)
+  paralelo<-rbind(paralelo,lapso)
   
   Ag.free<-Ag[Ag$estado=="F",]
   
   ggplot(data=Ag.free,aes(Ag.free$x,Ag.free$y))+
     geom_point(color="darkgoldenrod1",size=Ag.point)+
-    geom_point(data=poli,aes(poli$x,poli$y),color="skyblue3")+
+    geom_point(data=poli,aes(poli$x,poli$y),color="skyblue3",size=p.point)+
     geom_point(data=nucleos,aes(nucleos$x,nucleos$y,
-                                color=factor(nucleos$Cantidad)))+
+                                color=factor(nucleos$Cantidad)),size=n.point)+
     xlab("x")+ylab("y")+
     ggtitle(paste("Paso ",hora))+
     scale_color_discrete(name="\u{00C1}tomos de\nplata")+
     theme(plot.title = element_text(hjust = 0.5),
           panel.background = element_rect(fill = "white"))
-  ggsave(paste("Paso_",hora,".png"))
+  ggsave(paste("Par_Paso_",hora,".png"))
   
   
   Ag$x <- Ag$x + Ag$dx
@@ -231,9 +231,8 @@ ggplot(data=nucleos,aes(nucleos$Cantidad))+
   ggtitle(paste(contenido.plata, " mg de plata"))+
   theme(plot.title = element_text(hjust = 0.5),
         panel.background = element_rect(fill = "white"))
-ggsave (paste("Simulado_",contenido.plata,".png"))
+ggsave (paste("Par_Simulado_",contenido.plata,".png"))
 
-tf<-Sys.time()
-t<-difftime(tf,ti,units="mins")
+
 
 save.image(file="Simulado.RData")
